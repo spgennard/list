@@ -1,0 +1,1 @@
+svn diff | grep "^Index:" | cut "-d " -f2-
