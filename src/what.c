@@ -35,7 +35,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-static void usage(void);
+static void usage(void)	;
 static bool search(bool, bool, FILE *);
 
 int
