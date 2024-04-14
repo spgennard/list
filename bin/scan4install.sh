@@ -3,14 +3,15 @@
 
 function grab_mf_info
 {
-	POSS_COBDIR=$1
-	PRODUCT_NAME=
-	BITX64=
-	TS=$(stat -c "%Y" $POSS_COBDIR)
+	declare POSS_COBDIR=$1
+	declare PRODUCT_NAME=
+	declare BITX64=
+	declare TS=$(stat -c "%Y" $POSS_COBDIR)
 	declare VER=0.0.0
+
 	if [ -f $POSS_COBDIR/etc/cobver ];
 	then
-		PROD_STYLE=mf
+		declare PROD_STYLE=mf
 		while read line
 		do
 			case $line in
@@ -35,8 +36,10 @@ function grab_mf_info
 
 function scan_mf_dirs
 {
+	declare POSS_COBDIR
+	declare POSS_COBDIRS
+
 	# MF
-	POSS_COBDIRS=
 	if [ ! "x$COBDIR" == "x" ];
 	then
 		POSS_COBDIRS="$COBDIR/etc/cobver"
@@ -63,4 +66,55 @@ function scan_mf_dirs
 	done | sort -r -t, -k1 | uniq
 }
 
-scan_mf_dirs
+function dialog_mf
+{
+	declare TS
+	declare PROD_STYLE
+	declare POSS_COBDIR
+	declare VER
+	declare PRODUCT_NAME
+	declare BITX64
+	declare prodinfo
+	
+	readarray mf_lines <<<$(scan_mf_dirs)
+
+	ch=1
+	for mf_line in "${mf_lines[@]}"
+	do
+		saveIFS=$IFS
+		IFS=","
+		prodinfo=($mf_line)
+		IFS=$saveIFS
+
+		TS=${prodinfo[0]}
+		PROD_STYLE=${prodinfo[1]}
+		POSS_COBDIR=${prodinfo[2]}
+		VER=${prodinfo[3]}
+		PRODUCT_NAME=${prodinfo[4]}
+		BITX64=${prodinfo[5]}
+		
+		echo "$ch = $PRODUCT_NAME"
+		ch=$(( $ch + 1 ))
+
+		# echo "$TS,$PROD_STYLE,$POSS_COBDIR,$VER,$PRODUCT_NAME,$BITX64"
+	done
+
+	read -p 'Which? ' -a c
+
+	c=$(( $c - 1 ))
+	saveIFS=$IFS
+	IFS=","
+	set -- ${mf_lines[c]}
+	TS=$1
+	PROD_STYLE=$2
+	POSS_COBDIR=$3
+	VER=$4
+	PRODUCT_NAME=$5
+	BITX64=$6
+	IFS=$saveIFS
+
+
+	exec bash --rcfile <(echo ". ~/.bashrc; . $POSS_COBDIR/bin/cobsetenv $POSS_COBDIR")
+}
+
+dialog_mf
