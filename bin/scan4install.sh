@@ -27,7 +27,18 @@ function grab_info
 	fi
 }
 
-POSS_COBDIRS="$(find ~ -maxdepth 5 -name 'cobver' -print)"
+POSS_COBDIRS=
+if [ ! "x$COBDIR" == "x" ];
+then
+	POSS_COBDIRS="$COBDIR/etc/cobver"
+fi
+
+if [ ! "x$MFPRODBASE" == "x" ];
+then
+	POSS_COBDIRS="$MFPRODBASE/etc/cobver $POSS_COBDIRS"
+fi
+
+POSS_COBDIRS="$POSS_COBDIRS $(find ~ -maxdepth 5 -name 'cobver' -print)"
 POSS_COBDIRS="$POSS_COBDIRS $(find /opt/microfocus -maxdepth 3 -name 'cobver' -print)"
 
 for i in $POSS_COBDIRS
@@ -40,4 +51,4 @@ do
 	then
 		grab_info $POSS_COBDIR
 	fi
-done | sort -r -t, -k1
+done | sort -r -t, -k1 | uniq
