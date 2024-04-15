@@ -38,12 +38,24 @@ function scan_mf_dirs
 {
 	declare POSS_COBDIR
 	declare POSS_COBDIRS
+	declare SCAN_CACHE_FILE=~/.scan4install.cache
+	if [ -f  $SCAN_CACHE_FILE ];
+	then
+		SC_STAT=$(stat -c "%Y" $SCAN_CACHE_FILE)
+		SC_STAT_NOW=$(date +%s)
+		SC_ELAPTED=$((SC_STAT_NOW - SC_STAT))
+		if [ "$SC_ELAPTED" -lt "2628000" ];
+		then
+			cat $SCAN_CACHE_FILE
+			return
+		fi
+	fi
 
 	# MF
 	if [ ! "x$COBDIR" == "x" ];
 	then
 		POSS_COBDIRS="$COBDIR/etc/cobver"
-	fi
+	fi	
 
 	if [ ! "x$MFPRODBASE" == "x" ];
 	then
@@ -63,7 +75,7 @@ function scan_mf_dirs
 		then
 			grab_mf_info $POSS_COBDIR
 		fi
-	done | sort -r -t, -k1 | uniq
+	done | sort -r -t, -k1 | uniq | tee $SCAN_CACHE_FILE
 }
 
 function dialog_mf
@@ -76,7 +88,13 @@ function dialog_mf
 	declare BITX64
 	declare prodinfo
 	
-	readarray mf_lines <<<$(scan_mf_dirs)
+	scan_lines=$(scan_mf_dirs | grep -Ev "^$")
+	if [ "x$scan_lines" == "x" ];
+	then
+		return
+	fi
+	readarray mf_lines <<<"$scan_lines"
+
 	ch=1
 	for mf_line in "${mf_lines[@]}"
 	do
