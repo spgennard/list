@@ -77,7 +77,6 @@ function dialog_mf
 	declare prodinfo
 	
 	readarray mf_lines <<<$(scan_mf_dirs)
-
 	ch=1
 	for mf_line in "${mf_lines[@]}"
 	do
@@ -94,6 +93,8 @@ function dialog_mf
 		BITX64=${prodinfo[5]}
 		
 		echo "$ch = $PRODUCT_NAME"
+		TS_DATE=$(date -u "+%x" -d @$TS)
+		echo " $TS_DATE -> $POSS_COBDIR"
 		ch=$(( $ch + 1 ))
 
 		# echo "$TS,$PROD_STYLE,$POSS_COBDIR,$VER,$PRODUCT_NAME,$BITX64"
