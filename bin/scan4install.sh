@@ -1,10 +1,23 @@
 
 #!/bin/bash
 
+EXIT_OR_RETURN=return
+BASHRC_MODE=yes
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
 # If not running interactively, don't do anything
 case $- in
     *i*) ;;
-      *) return;;
+      *) 
+		IS_RC=$(echo $- | cut -c1)
+		if [ "$IS_RC" == "-" ];
+		then 
+			return
+		else
+			EXIT_OR_RETURN=exit
+			BASHRC_MODE=no
+		fi
+	;;
 esac
 
 # check whether whiptail or dialog is installed
@@ -14,7 +27,7 @@ read dialog <<< "$(which whiptail dialog 2> /dev/null)"
 # exit if none found
 [[ "$dialog" ]] || {
   echo 'neither whiptail nor dialog found' >&2
-  return
+  $EXIT_OR_RETURN
 }
 
 ignore_BKP=yes
@@ -115,6 +128,7 @@ function scan_mf_dirs
 	POSS_COBDIRS="$POSS_COBDIRS $(find ~ -maxdepth 4 $FIND_ARG -ipath '*/etc/cobver' -print)"
 	POSS_COBDIRS="$POSS_COBDIRS $(find /opt/microfocus -maxdepth 3 $FIND_ARG -ipath '*/etc/cobver' -print)"
 
+	TMP_FILE=$$.tmp
 	(
 		if [ -s $SCAN_CACHE_FILE ];
 		then
@@ -132,7 +146,9 @@ function scan_mf_dirs
 				grab_mf_info $POSS_COBDIR
 			fi
 		done
-	) | sort -r -t, -k1 | uniq | tee $SCAN_CACHE_FILE
+	) | sort -r -t, -k1 | uniq | tee $TMP_FILE
+
+	mv $TMP_FILE $SCAN_CACHE_FILE
 }
 
 function dialog_mf
@@ -148,7 +164,7 @@ function dialog_mf
 	scan_lines=$(scan_mf_dirs | grep -Ev "^$")
 	if [ "x$scan_lines" == "x" ];
 	then
-		return
+		$EXIT_OR_RETURN
 	fi
 	readarray mf_lines <<<"$scan_lines"
 
@@ -191,8 +207,12 @@ function dialog_mf
 
 	remove_cobdir	
 
-	# exec bash --rcfile <(echo ". ~/.bashrc; . $POSS_COBDIR/bin/cobsetenv $POSS_COBDIR")
-	. $POSS_COBDIR/bin/cobsetenv $POSS_COBDIR
+	if [ "$BASHRC_MODE" == "no" ];
+	then
+		exec bash --rcfile <(echo ". ~/.bashrc; . $POSS_COBDIR/bin/cobsetenv $POSS_COBDIR")
+	else
+		. $POSS_COBDIR/bin/cobsetenv $POSS_COBDIR
+	fi
 }
 
 function dialog_mf_cu
@@ -211,7 +231,7 @@ function dialog_mf_cu
 	scan_lines=$(scan_mf_dirs | grep -Ev "^$")
 	if [ "x$scan_lines" == "x" ];
 	then
-		return
+		$EXIT_OR_RETURN
 	fi
 	readarray mf_lines <<<"$scan_lines"
 
@@ -249,7 +269,7 @@ function dialog_mf_cu
 	then
 		cat $tfile
 		echo Leaving..
-		return
+		$EXIT_OR_RETURN
 	fi
 	c=$(cat $tfile)
 	rm -f $tfile
@@ -268,8 +288,13 @@ function dialog_mf_cu
 
 	remove_cobdir	
 	tput clear
-	. $POSS_COBDIR/bin/cobsetenv $POSS_COBDIR
-	# exec bash --rcfile <(echo ". ~/.bashrc; . $POSS_COBDIR/bin/cobsetenv $POSS_COBDIR")
+	if [ "$BASHRC_MODE" == "no" ];
+	then
+		exec bash --rcfile <(echo ". ~/.bashrc; . $POSS_COBDIR/bin/cobsetenv $POSS_COBDIR")
+	else
+		. $POSS_COBDIR/bin/cobsetenv $POSS_COBDIR
+	fi
+	# 
 }
 
 
@@ -278,7 +303,7 @@ ARGS=$*
 if [ "x$ARGS" == "x" ];
 then
 	dialog_mf_cu
-	return
+	$EXIT_OR_RETURN
 fi
 
 for i in $ARGS
@@ -294,6 +319,6 @@ do
 		remove_cobdir) 	remove_cobdir ;;
 		--) ;;
 		*) echo $0: invalid argument $i
-		   return
+		   $EXIT_OR_RETURN
 	esac
 done
