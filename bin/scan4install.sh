@@ -1,6 +1,12 @@
 
 #!/bin/bash
 
+# If not running interactively, don't do anything
+case $- in
+    *i*) ;;
+      *) return;;
+esac
+
 # check whether whiptail or dialog is installed
 # (choosing the first command found)
 read dialog <<< "$(which whiptail dialog 2> /dev/null)"
@@ -8,7 +14,7 @@ read dialog <<< "$(which whiptail dialog 2> /dev/null)"
 # exit if none found
 [[ "$dialog" ]] || {
   echo 'neither whiptail nor dialog found' >&2
-  exit 1
+  return
 }
 
 ignore_BKP=yes
@@ -266,7 +272,15 @@ function dialog_mf_cu
 	# exec bash --rcfile <(echo ". ~/.bashrc; . $POSS_COBDIR/bin/cobsetenv $POSS_COBDIR")
 }
 
+
+
 ARGS=$*
+if [ "x$ARGS" == "x" ];
+then
+	dialog_mf_cu
+	return
+fi
+
 for i in $ARGS
 do
 	case "$i" in
@@ -280,6 +294,6 @@ do
 		remove_cobdir) 	remove_cobdir ;;
 		--) ;;
 		*) echo $0: invalid argument $i
-		   exit 1
+		   return
 	esac
 done

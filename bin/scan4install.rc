@@ -1,0 +1,10 @@
+. ~/.bashrc
+. ~/dotfiles/bin/scan4install.sh
+
+echo COBDIR is now $COBDIR
+
+export PATH
+export CLASSPATH
+export LD_LIBRARY_PATH
+export COBCPY
+export COBDIR
