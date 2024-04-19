@@ -125,8 +125,8 @@ function scan_mf_dirs
 		POSS_COBDIRS="$MFPRODBASE/etc/cobver $POSS_COBDIRS"
 	fi
 
-	POSS_COBDIRS="$POSS_COBDIRS $(find ~ -maxdepth 4 $FIND_ARG -ipath '*/etc/cobver' -print)"
-	POSS_COBDIRS="$POSS_COBDIRS $(find /opt/microfocus -maxdepth 3 $FIND_ARG -ipath '*/etc/cobver' -print)"
+	POSS_COBDIRS="$POSS_COBDIRS $(find ~ -maxdepth 4 -type f $FIND_ARG -ipath '*/etc/cobver' -print)"
+	POSS_COBDIRS="$POSS_COBDIRS $(find /opt/microfocus -maxdepth 3 -type f $FIND_ARG -ipath '*/etc/cobver' -print)"
 
 	TMP_FILE=$$.tmp
 	(

@@ -1,3 +1,5 @@
+[[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path bash)"
+
 . ~/.bashrc
 . ~/dotfiles/bin/scan4install.sh
 
