@@ -5,6 +5,9 @@ EXIT_OR_RETURN=return
 BASHRC_MODE=yes
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
+# Default To 24 hours
+UPDATEINTERVAL="$((24 * 60 * 60))"
+
 # If not running interactively, don't do anything
 case $- in
     *i*) ;;
@@ -71,6 +74,14 @@ function remove_cobdir
 	fi
 }
 
+function getScanCacheUpdateTime()
+{
+    local aptDate="$(stat -c %Y $SCAN_CACHE_FILE)"
+    local nowDate="$(date +'%s')"
+
+    echo $((nowDate - aptDate))
+}
+
 function grab_mf_info
 {
 	declare POSS_COBDIR=$1
@@ -109,8 +120,15 @@ function scan_mf_dirs
 	declare POSS_COBDIR
 	declare POSS_COBDIRS
 	declare FIND_ARG
+	
 	if [ -s $SCAN_CACHE_FILE ];
 	then
+		lastScanUpdateTime="$(getScanCacheUpdateTime)"
+		if [[ "${lastScanUpdateTime}" -lt "${UPDATEINTERVAL}" ]];
+		then
+			cat $SCAN_CACHE_FILE
+			return
+		fi
 		FIND_ARG="-newer $SCAN_CACHE_FILE"
 	fi
 
