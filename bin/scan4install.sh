@@ -209,8 +209,13 @@ function dialog_mf
 		# echo "$TS,$PROD_STYLE,$POSS_COBDIR,$VER,$PRODUCT_NAME,$BITX64"
 	done
 
-	read -p 'Which? ' -a c
-
+	if [ ! "${#mf_lines[@]}" == "1"];
+	then
+		read -p 'Which? ' -a c
+	else
+		c=1
+	fi
+	
 	c=$(( $c - 1 ))
 	saveIFS=$IFS
 	IFS=","
@@ -279,18 +284,23 @@ function dialog_mf_cu
 		# echo "$TS,$PROD_STYLE,$POSS_COBDIR,$VER,$PRODUCT_NAME,$BITX64"
 	done
 
-	tfile=$$.tmp
-	eval $dialog "$(echo -e $WARGS)" 2>$tfile
-	ret=$?
-	echo ret is $?
-	if [ ! "$ret" == "0" ];
+	if [ ! "${#mf_lines[@]}" == "1"];
 	then
-		cat $tfile
-		echo Leaving..
-		$EXIT_OR_RETURN
+		tfile=$$.tmp
+		eval $dialog "$(echo -e $WARGS)" 2>$tfile
+		ret=$?
+		echo ret is $?
+		if [ ! "$ret" == "0" ];
+		then
+			cat $tfile
+			echo Leaving..
+			$EXIT_OR_RETURN
+		fi
+		c=$(cat $tfile)
+		rm -f $tfile
+	else
+		c=1
 	fi
-	c=$(cat $tfile)
-	rm -f $tfile
 
 	c=$(( $c - 1 ))
 	saveIFS=$IFS
