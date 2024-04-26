@@ -4,9 +4,13 @@
 EXIT_OR_RETURN=return
 BASHRC_MODE=yes
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+SCRIPT_RC="$SCRIPT_DIR/scan4install.rc"
 
 # Default To 24 hours
 UPDATEINTERVAL="$((24 * 60 * 60))"
+
+TMP_FILE=$$.tmp
+trap "rm -f $TMP_FILE" EXIT
 
 # If not running interactively, don't do anything
 case $- in
@@ -25,13 +29,14 @@ esac
 
 # check whether whiptail or dialog is installed
 # (choosing the first command found)
-read dialog <<< "$(which whiptail dialog 2> /dev/null)"
+read dialog <<< "$(which dialog whiptail 2> /dev/null)"
 
 # exit if none found
 [[ "$dialog" ]] || {
   echo 'neither whiptail nor dialog found' >&2
   $EXIT_OR_RETURN
 }
+
 
 ignore_BKP=yes
 SCAN_CACHE_FILE=~/.scan4install.cache
@@ -146,7 +151,6 @@ function scan_mf_dirs
 	POSS_COBDIRS="$POSS_COBDIRS $(find ~ -maxdepth 4 -type f $FIND_ARG -ipath '*/etc/cobver' -print)"
 	POSS_COBDIRS="$POSS_COBDIRS $(find /opt/microfocus -maxdepth 3 -type f $FIND_ARG -ipath '*/etc/cobver' -print)"
 
-	TMP_FILE=$$.tmp
 	(
 		if [ -s $SCAN_CACHE_FILE ];
 		then
@@ -167,6 +171,35 @@ function scan_mf_dirs
 	) | sort -r -t, -k1 | uniq | tee $TMP_FILE
 
 	mv $TMP_FILE $SCAN_CACHE_FILE
+}
+
+function start_shell_or_env
+{
+	saveIFS=$IFS
+	IFS=","
+	set -- $*
+	TS=$1
+	PROD_STYLE=$2
+	POSS_COBDIR=$3
+	VER=$4
+	PRODUCT_NAME=$5
+	BITX64=$6
+	IFS=$saveIFS
+
+	remove_cobdir	
+	if [ ! -f $POSS_COBDIR/bin/cobsetenv ];
+	then
+		echo "Selection $actual_c not found"
+		return
+	fi
+	
+	tput clear
+	if [ "$BASHRC_MODE" == "no" ];
+	then
+		exec bash --rcfile <(echo ". ~/.bashrc; . $POSS_COBDIR/bin/cobsetenv $POSS_COBDIR")
+	else
+		. $POSS_COBDIR/bin/cobsetenv $POSS_COBDIR
+	fi
 }
 
 function dialog_mf
@@ -203,39 +236,27 @@ function dialog_mf
 		
 		echo "$ch = $PRODUCT_NAME"
 		TS_DATE=$(date -u "+%x" -d @$TS)
-		echo " $TS_DATE -> $POSS_COBDIR"
+		# echo " $TS_DATE -> $POSS_COBDIR"
 		ch=$(( $ch + 1 ))
 
 		# echo "$TS,$PROD_STYLE,$POSS_COBDIR,$VER,$PRODUCT_NAME,$BITX64"
 	done
 
-	if [ ! "${#mf_lines[@]}" == "1"];
+	if [ ! "${#mf_lines[@]}" == "1" ];
 	then
 		read -p 'Which? ' -a c
 	else
 		c=1
 	fi
 	
+	actual_c=$c
 	c=$(( $c - 1 ))
-	saveIFS=$IFS
-	IFS=","
-	set -- ${mf_lines[c]}
-	TS=$1
-	PROD_STYLE=$2
-	POSS_COBDIR=$3
-	VER=$4
-	PRODUCT_NAME=$5
-	BITX64=$6
-	IFS=$saveIFS
-
-	remove_cobdir	
-
-	if [ "$BASHRC_MODE" == "no" ];
+	if [ "x${mf_lines[c]}" == "x" ];
 	then
-		exec bash --rcfile <(echo ". ~/.bashrc; . $POSS_COBDIR/bin/cobsetenv $POSS_COBDIR")
-	else
-		. $POSS_COBDIR/bin/cobsetenv $POSS_COBDIR
+		return
 	fi
+
+	start_shell_or_env ${mf_lines[c]}
 }
 
 function dialog_mf_cu
@@ -250,6 +271,8 @@ function dialog_mf_cu
 	declare scan_lines
 	declare WARGS
 	declare ch
+	declare BOX_MLIMIT
+	declare BOX_LINES
 
 	scan_lines=$(scan_mf_dirs | grep -Ev "^$")
 	if [ "x$scan_lines" == "x" ];
@@ -258,7 +281,22 @@ function dialog_mf_cu
 	fi
 	readarray mf_lines <<<"$scan_lines"
 
-	WARGS="--title \"Product?\" --menu "Choose" 20 80 ${#mf_lines[@]}"
+	BOX_MLIMIT=$(( ${#mf_lines[@]} ))
+
+	BOX_LINES=$(( BOX_MLIMIT + 6 ))
+
+	if [[ $BOX_LINES -gt $LINES ]];
+	then
+		read dialog <<< "$(which dialog 2> /dev/null)"
+
+		# exit if none found
+		[[ "$dialog" ]] || {
+			dialog_mf $*
+			return
+		}
+	fi
+	# WARGS="--title \"Product?\" --menu "Choose" 20 80 ${#mf_lines[@]}"
+	WARGS="--menu \"Select Product\" $BOX_LINES 80 ${#mf_lines[@]}"
 	ch=1
 	for mf_line in "${mf_lines[@]}"
 	do
@@ -284,17 +322,15 @@ function dialog_mf_cu
 		# echo "$TS,$PROD_STYLE,$POSS_COBDIR,$VER,$PRODUCT_NAME,$BITX64"
 	done
 
-	if [ ! "${#mf_lines[@]}" == "1"];
+	if [ ! "${#mf_lines[@]}" == "1" ];
 	then
 		tfile=$$.tmp
 		eval $dialog "$(echo -e $WARGS)" 2>$tfile
 		ret=$?
-		echo ret is $?
 		if [ ! "$ret" == "0" ];
 		then
 			cat $tfile
-			echo Leaving..
-			$EXIT_OR_RETURN
+			return
 		fi
 		c=$(cat $tfile)
 		rm -f $tfile
@@ -303,29 +339,13 @@ function dialog_mf_cu
 	fi
 
 	c=$(( $c - 1 ))
-	saveIFS=$IFS
-	IFS=","
-	set -- ${mf_lines[c]}
-	TS=$1
-	PROD_STYLE=$2
-	POSS_COBDIR=$3
-	VER=$4
-	PRODUCT_NAME=$5
-	BITX64=$6
-	IFS=$saveIFS
 
-	remove_cobdir	
-	tput clear
-	if [ "$BASHRC_MODE" == "no" ];
+	start_shell_or_env ${mf_lines[c]}
+	if [ "x${mf_lines[c]}" == "x" ];
 	then
-		exec bash --rcfile <(echo ". ~/.bashrc; . $POSS_COBDIR/bin/cobsetenv $POSS_COBDIR")
-	else
-		. $POSS_COBDIR/bin/cobsetenv $POSS_COBDIR
-	fi
-	# 
+		return
+	fi	
 }
-
-
 
 ARGS=$*
 if [ "x$ARGS" == "x" ];
