@@ -1,4 +1,3 @@
-
 #!/bin/bash
 
 EXIT_OR_RETURN=return
