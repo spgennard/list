@@ -8,7 +8,7 @@ else
 fi
 
 
-if [ "x$(grep -w 'hosts:' /etc/nsswitch.conf | grep libvrt)" == "x" ];
+if [ "x$(grep -w 'hosts:' /etc/nsswitch.conf | grep libvirt)" == "x" ];
 then
 	echo "/etc/nsswitch.conf need the following added:"
 	echo " libvirt libvirt_guest"
