@@ -1,0 +1,9 @@
+#!/bin/bash
+virsh list --name | while read n 
+do 
+  if [ ! "x$n" == "x" ];
+  then
+	  echo "$n :"
+    virsh domifaddr $n
+  fi
+done
