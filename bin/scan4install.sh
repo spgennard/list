@@ -192,7 +192,6 @@ function start_shell_or_env
 		return
 	fi
 	
-	tput clear
 	if [ "$BASHRC_MODE" == "no" ];
 	then
 		exec bash --rcfile <(echo ". ~/.bashrc; . $POSS_COBDIR/bin/cobsetenv $POSS_COBDIR")
@@ -323,16 +322,19 @@ function dialog_mf_cu
 
 	if [ ! "${#mf_lines[@]}" == "1" ];
 	then
+		tput smcup
 		tfile=$$.tmp
 		eval $dialog "$(echo -e $WARGS)" 2>$tfile
 		ret=$?
 		if [ ! "$ret" == "0" ];
 		then
+			tput rmcup
 			cat $tfile
 			return
 		fi
 		c=$(cat $tfile)
 		rm -f $tfile
+		tput rmcup
 	else
 		c=1
 	fi
