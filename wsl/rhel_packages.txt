@@ -1,0 +1,1 @@
+yum install libvirt-nss qemu-guest-agent
