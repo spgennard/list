@@ -1,4 +1,7 @@
-[[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path bash)"
+if [ "x$REMOTE_CONTAINERS" == "x" ];
+then
+	[[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path bash)"
+fi
 
 . ~/.bashrc
 . ~/dotfiles/bin/scan4install.sh
