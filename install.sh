@@ -4,13 +4,13 @@ if [ -z "$CODESPACES" ]; then
   git config --global url."git@github.com".insteadOf "https://github.com"
 fi
 
-if which apt >/dev/null
-then
+#if which apt >/dev/null
+#then
 #	if ! which apt >/dev/null
 #	then
 #		sudo apt install fzf
 #	fi
-fi
+#fi
 
 __DOTFILE_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 __DOTFILE_KEY="spg-dotfile"
