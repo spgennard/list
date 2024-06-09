@@ -68,6 +68,15 @@ function remove_cobdir {
 		pathremove_startswith $COBDIR MFPRODBASE
 		pathremove_startswith $COBDIR MFPLI_PRODUCT_DIR
 		pathremove_startswith $COBDIR COBDIR
+		unset COBDIR
+	fi
+
+	if [ ! ".$ACUCOBOL" == "." ]; then
+		pathremove_startswith $ACUCOBOL COPYPATH
+		pathremove_startswith $ACUCOBOL PATH
+		pathremove_startswith $ACUCOBOL LD_LIBRARY_PATH
+		pathremove_startswith $ACUCOBOL A_TERMCAP
+		unset ACUCOBOL
 	fi
 }
 
@@ -116,6 +125,13 @@ function grab_acu_info {
 	declare VER=0.0.0
 	declare PROD_STYLE=acu
 
+	INFO_LINE=$(env -i bash -c "(. $POSS_COBDIR/bin/acusetenv.sh $POSS_COBDIR && ccbl -V) | grep ' compiler' " 2>/dev/null)
+	if [ "x$INFO_LINE" == "x" ];
+	then
+		return
+	fi
+	VER=$(echo $INFO_LINE | sed -e 's/.*version *//')
+	PRODUCT_NAME=$INFO_LINE
 	if [ ! "x$PRODUCT_NAME" == "x" ]; then
 		echo "$TS,$PROD_STYLE,$POSS_COBDIR,$VER,$PRODUCT_NAME,$BITX64"
 	fi
@@ -206,7 +222,7 @@ function start_shell_or_env {
 		;;
 	acu)
 		if [ ! -f $POSS_COBDIR/bin/acusetenv.sh ]; then
-			echo "Selection $actual_c not found"
+			echo "ACU Selection $actual_c not found ($POSS_COBDIR/bin/acusetenv.sh)"
 			return
 		fi
 		if [ "$BASHRC_MODE" == "no" ]; then
