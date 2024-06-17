@@ -145,7 +145,7 @@ function scan_mf_dirs {
 	if [ -s $SCAN_CACHE_FILE ]; then
 		lastScanUpdateTime="$(getScanCacheUpdateTime)"
 		if [[ "${lastScanUpdateTime}" -lt "${UPDATEINTERVAL}" ]]; then
-			cat $SCAN_CACHE_FILE
+			cat $SCAN_CACHE_FILE | sort -t, -k2,1
 			return
 		fi
 		FIND_ARG="-newer $SCAN_CACHE_FILE"
@@ -161,12 +161,13 @@ function scan_mf_dirs {
 	fi
 
 	POSS_COBDIRS="$POSS_COBDIRS $(find ~ -maxdepth 3 -type f $FIND_ARG -ipath '*/etc/cobver' -print 2>/dev/null)"
-	POSS_COBDIRS="$POSS_COBDIRS $(find ~ -maxdepth 3 -type f $FIND_ARG -ipath '*/etc/cblconfig' -print 2>/dev/null)"
 	POSS_COBDIRS="$POSS_COBDIRS $(find /opt/microfocus -maxdepth 3 -type f $FIND_ARG -ipath '*/etc/cobver' -print 2>/dev/null)"
+
+	POSS_COBDIRS="$POSS_COBDIRS $(find ~ -maxdepth 3 -type f $FIND_ARG -ipath '*/etc/cblconfig' -print 2>/dev/null)"
 
 	(
 		if [ -s $SCAN_CACHE_FILE ]; then
-			cat $SCAN_CACHE_FILE
+			cat $SCAN_CACHE_FILE | sort -t, -k2,1
 		fi
 
 		for i in $POSS_COBDIRS; do
@@ -190,7 +191,9 @@ function scan_mf_dirs {
 				;;
 			esac
 		done
-	) | sort -r -t, -k1 | uniq | tee $TMP_FILE
+
+		echo "99999999,,,,Refresh Cache"
+	) | sort -t, -k2,1 | uniq | tee $TMP_FILE
 
 	mv $TMP_FILE $SCAN_CACHE_FILE
 }
@@ -208,8 +211,8 @@ function start_shell_or_env {
 	IFS=$saveIFS
 
 	remove_cobdir
-	case "$PROD_STYLE" in
-	mf)
+	case "x$PROD_STYLE" in
+	xmf)
 		if [ ! -f $POSS_COBDIR/bin/cobsetenv ]; then
 			echo "Selection $actual_c not found"
 			return
@@ -220,7 +223,7 @@ function start_shell_or_env {
 			. $POSS_COBDIR/bin/cobsetenv $POSS_COBDIR
 		fi
 		;;
-	acu)
+	xacu)
 		if [ ! -f $POSS_COBDIR/bin/acusetenv.sh ]; then
 			echo "ACU Selection $actual_c not found ($POSS_COBDIR/bin/acusetenv.sh)"
 			return
@@ -230,6 +233,10 @@ function start_shell_or_env {
 		else
 			. $POSS_COBDIR/bin/acusetenv.sh $POSS_COBDIR
 		fi
+	;;
+	x)
+		rm -f $SCAN_CACHE_FILE
+		$restart_cmd $*
 	;;
 	esac
 
@@ -284,6 +291,7 @@ function dialog_mf {
 		return
 	fi
 
+	restart_cmd="dialog_mf"
 	start_shell_or_env ${mf_lines[c]}
 }
 
@@ -310,9 +318,9 @@ function dialog_mf_cu {
 	BOX_MLIMIT=$((${#mf_lines[@]}))
 
 	BOX_LINES=$((BOX_MLIMIT + 6))
-
+	
 	if [[ $BOX_LINES -gt $LINES ]]; then
-		read dialog <<<"$(which dialog 2>/dev/null)"
+		read dialog <<<"$(which whiptail 2>/dev/null)"
 
 		# exit if none found
 		[[ "$dialog" ]] || {
@@ -365,6 +373,7 @@ function dialog_mf_cu {
 
 	c=$(($c - 1))
 
+	restart_cmd="dialog_mf_cu"
 	start_shell_or_env ${mf_lines[c]}
 	if [ "x${mf_lines[c]}" == "x" ]; then
 		return
