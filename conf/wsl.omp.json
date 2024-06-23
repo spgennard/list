@@ -42,7 +42,7 @@
         {
           "type": "text",
           "style": "plain",
-          "template": "{{ with .Env.COBDIR }}COBDIR  $COBDIR {{ end }}"
+          "template": "{{ if .Env.COBDIR }}COBDIR  $COBDIR {{if .Env.__COBOL_VERSION }}\uebfe $__COBOL_VERSION{{ end }}{{ end }}"
         }
       ]
     },
@@ -53,8 +53,8 @@
       "segments": [
         {
           "type": "text",
-          "style": "powerline",
-          "template": "{{ with .Env.ACUCOBOL }}ACUCOBOL  $ACUCOBOL {{ end }}"
+          "style": "plain",
+          "template": "{{ if .Env.ACUCOBOL }}ACUCOBOL  $ACUCOBOL {{if .Env.__COBOL_VERSION }}\uebfe $__COBOL_VERSION{{ end }}{{ end }}"
         }
       ]
     },

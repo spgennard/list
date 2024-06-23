@@ -102,7 +102,7 @@ function grab_mf_info {
 				BITX64=64
 				;;
 			cobol*)
-				VER=$(echo $line | cut -f2 -d" ")
+				VER=$(echo $line | cut -f2 -d" " | sed 's/^v//')
 				;;
 			PTI=*for* | PTI=*Unix* | PTI=*Visual\ COBOL* | PTI=*Enterprise\ Developer* | *Community\ Edition*)
 				PRODUCT_NAME=$(echo $line | cut -f2- -d= | eval $short_names_filter)
@@ -218,9 +218,10 @@ function start_shell_or_env {
 			return
 		fi
 		if [ "$BASHRC_MODE" == "no" ]; then
-			exec bash --rcfile <(echo ". ~/.bashrc; . $POSS_COBDIR/bin/cobsetenv $POSS_COBDIR")
+			exec bash --rcfile <(echo ". ~/.bashrc; export __COBOL_VERSION=$4; . $POSS_COBDIR/bin/cobsetenv $POSS_COBDIR")
 		else
 			. $POSS_COBDIR/bin/cobsetenv $POSS_COBDIR
+			export __COBOL_VERSION=$4
 		fi
 		;;
 	xacu)
@@ -229,9 +230,10 @@ function start_shell_or_env {
 			return
 		fi
 		if [ "$BASHRC_MODE" == "no" ]; then
-			exec bash --rcfile <(echo ". ~/.bashrc; . $POSS_COBDIR/bin/acusetenv.sh $POSS_COBDIR")
+			exec bash --rcfile <(echo ". ~/.bashrc; export __COBOL_VERSION=$4 ; . $POSS_COBDIR/bin/acusetenv.sh $POSS_COBDIR")
 		else
 			. $POSS_COBDIR/bin/acusetenv.sh $POSS_COBDIR
+			export __COBOL_VERSION=$4
 		fi
 	;;
 	x)
