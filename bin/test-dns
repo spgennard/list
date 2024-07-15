@@ -1,0 +1,38 @@
+#!/bin/bash
+# Get domain name from the first argument
+DOMAIN=$1
+shift
+# Print table header
+echo "IP address      | Response time | Timed out"
+echo "--------------- | ------------- | --------"
+
+ADDRS=$*
+if [ x"$*" == "x" ]; then
+	ADDRS=$(cat /etc/resolv.conf | grep "nameserver" | sed 's/^#//' | sed 's/nameserver //')
+fi
+
+# Loop through IP addresses and run dig command
+for IP in $ADDRS
+do
+	start_time=$(date +%s%3N) 
+	dig_out=$(dig $DOMAIN @$IP)
+	dig_ret=${PIPESTATUS[0]}
+	end_time=$(date +%s%3N) 
+
+	if [ "x$dig_ret" == "x0" ]; then
+		# Run dig command and extract response time using awk
+		result=$(echo "$dig_out" | awk '/time/ {print $4 " ms"}')
+		# Print IP address and result 
+		printf "%-15s | %-13s | %s\n" "$IP" "$result" "no"
+	else
+		duration_ms=$((end_time - start_time))
+		if [[ $dig_out == *"timed out"* ]]; then
+			printf "%-15s | %-13s | %s\n" "$IP" "$duration_ms ms"  "yes"
+		else
+			printf "%-10s | %-13s | %s\n" "$IP" "$duration_ms ms"  "error"
+			echo "$dig_out"
+		fi
+	fi
+
+	
+done
