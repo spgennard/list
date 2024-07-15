@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json",
-  "console_title_template": "{{.Folder}} - {{ if .WSL }} $WSL_DISTRO_NAME {{else}} {{.OS}} {{end}} ($COLUMNS/$LINES)",
+  "console_title_template": "{{ if .Env.OMP_TITLE_PREFIX }} $OMP_TITLE_PREFIX {{else}} {{.Folder}} {{ end}} - {{ if .WSL }} $WSL_DISTRO_NAME {{else}} {{.OS}} {{end}} ($COLUMNS/$LINES)",
   "blocks": [
     {
       "alignment": "left",
