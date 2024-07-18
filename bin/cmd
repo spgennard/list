@@ -4,9 +4,17 @@ if ! type wslpath >/dev/null 2>&1; then
     exit
 fi
 
-TMPFILE=$$.bat
+BASE_TMPFILE=$$.bat
+TMPFILE=/mnt/c/tmp/$BASE_TMPFILE
 WSL_PWD=$(wslpath -w "$PWD")
 mkdir -p /mnt/c/tmp
+
+function cleanup {
+    echo Finished removing $TMPFILE
+    rm -f $TMPFILE
+}
+
+trap cleanup exit
 
 cd /mnt/c/tmp
 cat <<EOF | unix2dos >$TMPFILE
@@ -14,5 +22,4 @@ cat <<EOF | unix2dos >$TMPFILE
 %*
 EOF
 
-cmd.exe /k $TMPFILE $@
-echo Finished removing $TMPFILE
+cmd.exe /k $BASE_TMPFILE $@
