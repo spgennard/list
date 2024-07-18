@@ -10,7 +10,6 @@ WSL_PWD=$(wslpath -w "$PWD")
 mkdir -p /mnt/c/tmp
 
 function cleanup {
-    echo Finished removing $TMPFILE
     rm -f $TMPFILE
 }
 
