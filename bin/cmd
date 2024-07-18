@@ -1,0 +1,18 @@
+#!/bin/bash
+if ! type wslpath >/dev/null 2>&1; then
+    echo "$0: requires WSL2"
+    exit
+fi
+
+TMPFILE=$$.bat
+WSL_PWD=$(wslpath -w "$PWD")
+mkdir -p /mnt/c/tmp
+
+cd /mnt/c/tmp
+cat <<EOF | unix2dos >$TMPFILE
+@pushd "$WSL_PWD"
+%*
+EOF
+
+cmd.exe /k $TMPFILE $@
+echo Finished removing $TMPFILE
