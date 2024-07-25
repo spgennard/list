@@ -1,0 +1,22 @@
+#!/bin/bash
+IMAGE=$1
+export XUID=$(id -u)
+export XGID=$(id -g)
+PLAT=$(docker run --rm $IMAGE /bin/bash -c ". /etc/os-release; echo \$ID")
+#
+
+export OMP_TITLE_PREFIX=$PLAT
+PHOME=$(dirname $HOME)
+docker run --rm -ti -v \
+    $PHOME:$PHOME -w $(pwd) \
+    --init \
+    -e OMP_TITLE_PREFIX=$OMP_TITLE_PREFIX \
+    --workdir="$(pwd)" \
+    --user $XUID:$XGID \
+    --volume="/etc/sudoers:/etc/sudoers:ro" \
+    --volume="/etc/sudoers.d:/etc/sudoers.d:ro" \
+    --volume="/etc/group:/etc/group:ro" \
+    --volume="/etc/passwd:/etc/passwd:ro" \
+    --volume="/etc/shadow:/etc/shadow:ro" \
+    --volume="/mnt:/mnt:ro" \
+    $IMAGE

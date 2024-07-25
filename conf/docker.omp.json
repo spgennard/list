@@ -1,13 +1,13 @@
 {
   "$schema": "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json",
-  "console_title_template": "{{ if .Env.OMP_TITLE_PREFIX }} $OMP_TITLE_PREFIX {{else}} {{.Folder}} {{ end}} - {{ if .WSL }} $WSL_DISTRO_NAME {{else}} {{.OS}} {{end}} ($COLUMNS/$LINES)",
+  "console_title_template": "{{ if .Env.OMP_TITLE_PREFIX }} $OMP_TITLE_PREFIX {{else}} {{.Folder}} {{ end}} ($COLUMNS/$LINES)",
   "blocks": [
     {
       "alignment": "left",
       "segments": [
         {
           "foreground": "#193549",
-          "background": "#ffeb3b",
+          "background": "#f7f7f7",
           "style": "",
           "template": "\uf1d3  {{ .HEAD }}",
           "type": "git"
@@ -24,8 +24,8 @@
         {
           "type": "svn",
           "style": "powerline",
-          "foreground": "#193549",
-          "background": "#ffeb3b",
+          "foreground": "#0997e5",
+          "background": "#f7f7f7",
           "properties": {
             "fetch_status": false,
             "native_fallback": true
@@ -81,22 +81,22 @@
           "style": "powerline",
           "powerline_symbol": "",
           "foreground": "#000000",
-          "background": "#0B59E7",
+          "background": "#0997e5",
           "template": "  {{ .Context }} "
         },
         {
           "type": "os",
           "style": "plain",
           "powerline_symbol": "\ue0b0",
-          "foreground": "#ffca1a",
-          "background": "#0078d4",
+          "foreground": "#f7f7f7",
+          "background": "#0997e5",
           "template": "{{.Icon}}   ",
           "properties": {
             "display_distro_name": false
           }
         },
         {
-          "background": "#ffe9aa",
+          "background": "#f7f7f7",
           "foreground": "#100e23",
           "powerline_symbol": "\ue0b0",
           "style": "powerline",
@@ -104,13 +104,36 @@
           "type": "root"
         },
         {
-          "background": "#ffffff",
+          "background": "#f7f7f7",
           "foreground": "#100e23",
           "powerline_symbol": "\ue0b0",
           "style": "powerline",
-          "template": " {{ .UserName }}@{{ .HostName }} ",
+          "template": " {{ .UserName }} ",
           "type": "session"
-        },
+        }
+      ],
+      "newline": true,
+      "type": "prompt"
+    },
+    {
+      "alignment": "right",
+      "newline": false,
+      "type": "prompt",
+      "segments": [
+        {
+          "background": "#f7f7f7",
+          "foreground": "#100e23",
+          "style": "powerline",
+          "template": "Id: {{ .HostName }} ",
+          "type": "session"
+        }
+      ]
+    },
+    {
+      "alignment": "left",
+      "newline": true,
+      "type": "prompt",
+      "segments": [
         {
           "background": "#91ddff",
           "foreground": "#100e23",
@@ -132,16 +155,14 @@
           "template": " \ue20f ",
           "type": "status"
         }
-      ],
-      "newline": true,
-      "type": "prompt"
+      ]
     },
     {
       "alignment": "left",
       "newline": true,
       "segments": [
         {
-          "foreground": "#007ACC",
+          "foreground": "#0997e5",
           "style": "plain",
           "template": "\u276f ",
           "type": "text"

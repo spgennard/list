@@ -1,0 +1,1 @@
+docker images --quiet --format "{{.Repository}}:{{.Tag}}" --filter label=com.microfocus.is-base-image=true --quiet

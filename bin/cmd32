@@ -1,0 +1,32 @@
+#!/bin/bash
+if ! type wslpath >/dev/null 2>&1; then
+    echo "$0: requires WSL2"
+    exit
+fi
+
+BASE_TMPFILE=$$.bat
+TMPFILE=/mnt/c/tmp/$BASE_TMPFILE
+WSL_PWD=$(wslpath -w "$PWD")
+mkdir -p /mnt/c/tmp
+
+function cleanup {
+    rm -f $TMPFILE
+}
+
+trap cleanup exit
+
+cd /mnt/c/tmp
+cat <<EOF | unix2dos >$TMPFILE
+@pushd "$WSL_PWD"
+%*
+EOF
+
+export SystemRoot=$(wslpath -u $(cmd.exe /c echo \%SystemRoot\% 2>/dev/null | tr -d '\n\t\r '))
+
+echo $SystemRoot
+if [ "x$SystemRoot" == "x" ]; then
+	echo $0: did not find systemroot
+	exit
+fi
+
+"${SystemRoot}/SysWOW64/cmd.exe" /k $BASE_TMPFILE $@

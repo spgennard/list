@@ -1,0 +1,33 @@
+#!/bin/bash
+DOCKER="$(basename $(echo $0 | cut -d- -f1))"
+
+if ! type "$DOCKER" >/dev/null 2>&1; then
+	echo "$0: Unable to find $DOCKER"
+	exit 1
+fi
+
+if [ "x$1" == "x" ]; then
+	echo "$0: usage image-tag ($DOCKER)"
+	exit 2
+fi
+
+for id in $*
+do
+	parent=$($DOCKER inspect --format "{{ .Id }}" $id 2>/dev/null)
+	echo "Finding images using $id -> $parent "
+	echo
+	IDS=$($DOCKER inspect --format='{{.Id}} {{.Parent}}' $($DOCKER images --all --quiet --filter since=$parent) 2>/dev/null | awk -v parent=$parent '{ if ($2 == parent) print $1 }' 2>/dev/null)
+	if [ "x$IDS" == "x" ];
+	then
+		echo "$0: No images created since & dependant on $id image found"
+		exit 3
+	else
+		for i in $IDS
+		do
+			echo " Image Id : $i"
+			echo "  $($DOCKER inspect $i | jq -r '.[].RepoTags[]')"
+		done
+	fi
+done
+
+exit 0
