@@ -1,16 +1,77 @@
 {
   "$schema": "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json",
-  "console_title_template": "{{ if .Env.OMP_TITLE_PREFIX }} $OMP_TITLE_PREFIX {{else}} {{.Folder}} {{ end}} - {{ if .WSL }} $WSL_DISTRO_NAME {{else}} {{.OS}} {{end}} ($COLUMNS/$LINES)",
+  "console_title_template": "{{ if .Env.OMP_TITLE_PREFIX }} {{ env \"OMP_TITLE_PREFIX\" }} {{else}} {{.Folder}} {{ end}} @ {{ .HostName }}",
+  "palettes": {
+    "template": "{{ if eq .Env.TERM_PROGRAM \"vscode\" }}vscode-rocket{{ else }}rocket{{ end }}",
+    "list": {
+      "rocket": {
+        "git-foreground": "#98019b",
+        "git-background": "#FFFB38",
+        "git": "#FFFB38",
+        "git-modified": "#FF9248",
+        "git-diverged": "#FF4500",
+        "git-ahead": "#B388FF",
+        "git-behind": "#B388FF",
+        "svn-foreground": "#98019b",
+        "svn-background": "#FFFB38",
+        "red": "#FF0000",
+        "green": "#00FF00",
+        "blue": "#0000FF",
+        "white": "#FFFFFF",
+        "black": "#111111",
+        "rs-background-1": "#98019b",
+        "rs-background-2": "#98019b",
+        "rs-background-3": "#98019b",
+        "rs-background-4": "#98019b"
+      },
+      "vscode-rocket": {
+        "git-foreground": "#98019b",
+        "git-background": "#FFFFFF",
+        "git": "#FFFFFF",
+        "git-modified": "#FF9248",
+        "git-diverged": "#FF4500",
+        "git-ahead": "#B388FF",
+        "git-behind": "#B388FF",
+        "svn-foreground": "#98019b",
+        "svn-background": "#FFFFFF",
+        "red": "#FF0000",
+        "green": "#00FF00",
+        "blue": "#0000FF",
+        "white": "#FFFFFF",
+        "black": "#111111",
+        "rs-background-1": "#98019b",
+        "rs-background-2": "#98019b",
+        "rs-background-3": "#98019b",
+        "rs-background-4": "#98019b"
+      }
+    }
+  },
   "blocks": [
     {
       "alignment": "left",
       "segments": [
         {
-          "foreground": "#193549",
-          "background": "#ffeb3b",
-          "style": "",
-          "template": "\uf1d3  {{ .HEAD }}",
-          "type": "git"
+          "foreground": "p:git-foreground",
+          "background": "p:git-background",
+          "style": "diamond",
+          "leading_diamond": "\ue0b6",
+          "trailing_diamond": "\ue0b4",
+          "template": "\uea68  {{ .HEAD }}",
+          "type": "git",
+          "properties": {
+            "fetch_status": true,
+            "fetch_upstream_icon": true
+          },
+          "background_templates": [
+            "{{ if or (.Working.Changed) (.Staging.Changed) }}p:git-modified{{ end }}",
+            "{{ if and (gt .Ahead 0) (gt .Behind 0) }}p:git-diverged{{ end }}",
+            "{{ if gt .Ahead 0 }}p:git-ahead{{ end }}",
+            "{{ if gt .Behind 0 }}p:git-behind{{ end }}"
+          ],
+          "mapped_branches": {
+            "feat/*": "🚀 ",
+            "bug/*": "🐛 "
+          }
         }
       ],
       "newline": false,
@@ -23,14 +84,16 @@
       "segments": [
         {
           "type": "svn",
-          "style": "powerline",
-          "foreground": "#193549",
-          "background": "#ffeb3b",
+          "style": "diamond",
+          "leading_diamond": "\ue0b6",
+          "trailing_diamond": "\ue0b4",
+          "foreground": "p:svn-foreground",
+          "background": "p:svn-background",
           "properties": {
             "fetch_status": false,
             "native_fallback": true
           },
-          "template": "\uea68  {{.Branch}} {{.Working.String}}"
+          "template": "\ue0a0  {{.Branch}} {{.Working.String}}"
         }
       ]
     },
@@ -42,7 +105,7 @@
         {
           "type": "text",
           "style": "plain",
-          "template": "{{ if .Env.COBDIR }}COBDIR  $COBDIR {{if .Env.__COBOL_VERSION }}\uebfe $__COBOL_VERSION{{ end }}{{ end }}"
+          "template": "{{ if .Env.COBDIR }}COBDIR  {{ env \"COBDIR\" }} {{if .Env.__COBOL_VERSION }}\uebfe {{ env \"__COBOL_VERSION\" }}{{ end }}{{ end }}"
         }
       ]
     },
@@ -54,7 +117,7 @@
         {
           "type": "text",
           "style": "plain",
-          "template": "{{ if .Env.ACUCOBOL }}ACUCOBOL  $ACUCOBOL {{if .Env.__COBOL_VERSION }}\uebfe $__COBOL_VERSION{{ end }}{{ end }}"
+          "template": "{{ if .Env.ACUCOBOL }}ACUCOBOL  {{ env \"ACUCOBOL\" }} {{if .Env.__COBOL_VERSION }}\uebfe {{ env \"__COBOL_VERSION\" }}{{ end }}{{ end }}"
         }
       ]
     },
@@ -64,8 +127,8 @@
       "type": "prompt",
       "segments": [
         {
-          "background": "#906cff",
-          "foreground": "#100e23",
+          "background": "p:rs-background-3",
+          "foreground": "#ffffff",
           "powerline_symbol": "\ue0b0",
           "style": "powerline",
           "template": " \ue235 {{ if .Error }}{{ .Error }}{{ else }}{{ if .Venv }}{{ .Venv }} {{ end }}{{ .Full }}{{ end }} ",
@@ -77,24 +140,29 @@
       "alignment": "left",
       "segments": [
         {
-          "type": "docker",
-          "style": "powerline",
-          "powerline_symbol": "",
-          "foreground": "#000000",
-          "background": "#0B59E7",
-          "template": "  {{ .Context }} "
-        },
-        {
-          "type": "os",
-          "style": "plain",
-          "powerline_symbol": "\ue0b0",
-          "foreground": "#ffca1a",
-          "background": "#0078d4",
-          "template": "{{.Icon}}   ",
+          "background": "p:rs-background-4",
+          "foreground": "#ffffff",
+          "leading_diamond": "\ue0b6",
+          "trailing_diamond": "\ue0b4",
           "properties": {
-            "display_distro_name": false
-          }
-        },
+            "style": "full"
+          },
+          "style": "diamond",
+          "template": "\uf115  {{ .Path }}",
+          "min_width": 80,
+          "background_templates": [
+            "{{if contains \"default\" .Profile}}#FFA400{{end}}",
+            "{{if contains \"jan\" .Profile}}#f1184c{{end}}"
+          ],
+          "type": "path"
+        }
+      ],
+      "newline": true,
+      "type": "prompt"
+    },
+    {
+      "alignment": "left",
+      "segments": [
         {
           "background": "#ffe9aa",
           "foreground": "#100e23",
@@ -104,49 +172,29 @@
           "type": "root"
         },
         {
-          "background": "#ffffff",
-          "foreground": "#100e23",
-          "powerline_symbol": "\ue0b0",
-          "style": "powerline",
-          "template": " {{ .UserName }}@{{ .HostName }} ",
-          "type": "session"
+          "type": "session",
+          "background": "p:rs-background-2",
+          "style": "diamond",
+          "leading_diamond": "\ue0b6",
+          "trailing_diamond": "\ue0b4",
+          "template": "{{ if .SSHSession }} {{ end }}{{ .UserName }}{{ if .SSHSession }}@.HostName{{ end }}"
         },
         {
-          "background": "#91ddff",
-          "foreground": "#100e23",
-          "powerline_symbol": "\ue0b0",
-          "properties": {
-            "folder_icon": "\uf115",
-            "folder_separator_icon": "\ue0bb",
-            "style": "full"
-          },
-          "style": "powerline",
-          "template": " {{ .Path }} ",
-          "type": "path"
-        },
-        {
-          "background": "#ff8080",
+          "background": "p:red",
           "foreground": "#ffffff",
           "powerline_symbol": "\ue0b0",
           "style": "powerline",
           "template": " \ue20f ",
           "type": "status"
-        }
-      ],
-      "newline": true,
-      "type": "prompt"
-    },
-    {
-      "alignment": "left",
-      "newline": true,
-      "segments": [
+        },
         {
           "foreground": "#007ACC",
           "style": "plain",
-          "template": "\u276f ",
+          "template": " \u276f ",
           "type": "text"
         }
       ],
+      "newline": true,
       "type": "prompt"
     }
   ],

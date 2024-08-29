@@ -1,22 +1,77 @@
 #!/bin/bash
-IMAGE=$1
-export XUID=$(id -u)
-export XGID=$(id -g)
-PLAT=$(docker run --rm $IMAGE /bin/bash -c ". /etc/os-release; echo \$ID")
+# check whether whiptail or dialog is installed
+# (choosing the first command found)
+read dialog <<<"$(which dialog whiptail 2>/dev/null)"
+
+function shell2image {
+    IMAGE=$1
+    export XUID=$(id -u)
+    export XGID=$(id -g)
+    PLAT=$(docker run --rm $IMAGE /bin/bash -c ". /etc/os-release; echo \$ID")
 #
 
-export OMP_TITLE_PREFIX=$PLAT
-PHOME=$(dirname $HOME)
-docker run --rm -ti -v \
-    $PHOME:$PHOME -w $(pwd) \
-    --init \
-    -e OMP_TITLE_PREFIX=$OMP_TITLE_PREFIX \
-    --workdir="$(pwd)" \
-    --user $XUID:$XGID \
-    --volume="/etc/sudoers:/etc/sudoers:ro" \
-    --volume="/etc/sudoers.d:/etc/sudoers.d:ro" \
-    --volume="/etc/group:/etc/group:ro" \
-    --volume="/etc/passwd:/etc/passwd:ro" \
-    --volume="/etc/shadow:/etc/shadow:ro" \
-    --volume="/mnt:/mnt:ro" \
-    $IMAGE
+    export OMP_TITLE_PREFIX=$PLAT
+    PHOME=$(dirname $HOME)
+    docker run --init \
+        --rm -ti \
+        --volume="$PHOME:$PHOME" \
+        -e OMP_TITLE_PREFIX=$OMP_TITLE_PREFIX \
+        --workdir="$(pwd)" \
+        --user $XUID:$XGID \
+        --volume="/etc/sudoers:/etc/sudoers:ro" \
+        --volume="/etc/sudoers.d:/etc/sudoers.d:ro" \
+        --volume="/etc/group:/etc/group:ro" \
+        --volume="/etc/passwd:/etc/passwd:ro" \
+        --volume="/etc/shadow:/etc/shadow:ro" \
+        --volume="/mnt:/mnt:ro" \
+        -w $(pwd) \
+        $IMAGE
+}
+
+function dialog_images {
+    declare mf_images
+
+    mf_images_lines=$(docker-mfimages)
+	if [ "x$mf_images_lines" == "x" ]; then
+		return
+	fi
+
+    readarray mf_images <<<"$mf_images_lines"
+
+	BOX_MLIMIT=$((${#mf_images[@]}))
+	BOX_LINES=$((BOX_MLIMIT + 6))
+
+    WARGS="--menu \"Select Product\" $BOX_LINES 80 ${#mf_images[@]}"
+	ch=1
+	for mf_image in "${mf_images[@]}"; do
+        WARGS="$WARGS $ch \"$mf_image\""
+        ch=$(($ch + 1))
+    done
+
+    if [ ! "${#mf_images[@]}" == "1" ]; then
+		tput smcup
+		tfile=$$.tmp
+		eval $dialog "$(echo -e $WARGS)" 2>$tfile
+		ret=$?
+		if [ ! "$ret" == "0" ]; then
+			tput rmcup
+			cat $tfile
+			return
+		fi
+		c=$(cat $tfile)
+		rm -f $tfile
+		tput rmcup
+	else
+		c=1
+	fi
+
+	c=$(($c - 1))
+    shell2image ${mf_images[c]} 
+}
+
+# just handle one thing (for the moment)
+if [ "x$1" == "x" ]; then
+    dialog_images
+else
+    shell2image $1
+fi
