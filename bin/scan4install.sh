@@ -37,7 +37,7 @@ read dialog <<<"$(which dialog whiptail 2>/dev/null)"
 
 ignore_BKP=yes
 SCAN_CACHE_FILE=~/.scan4install.cache
-short_names_filter="sed -e \"s/Micro Focus //\""
+short_names_filter="sed -e \"s/Micro Focus //\" | sed -e \"s/Rocket //\""
 
 function beginswith {
 	case $2 in
@@ -162,6 +162,7 @@ function scan_mf_dirs {
 
 	POSS_COBDIRS="$POSS_COBDIRS $(find ~ -maxdepth 3 -type f $FIND_ARG -ipath '*/etc/cobver' -print 2>/dev/null)"
 	POSS_COBDIRS="$POSS_COBDIRS $(find /opt/microfocus -maxdepth 3 -type f $FIND_ARG -ipath '*/etc/cobver' -print 2>/dev/null)"
+	POSS_COBDIRS="$POSS_COBDIRS $(find /opt/rocketsoftware -maxdepth 3 -type f $FIND_ARG -ipath '*/etc/cobver' -print 2>/dev/null)"
 
 	POSS_COBDIRS="$POSS_COBDIRS $(find ~ -maxdepth 3 -type f $FIND_ARG -ipath '*/etc/cblconfig' -print 2>/dev/null)"
 

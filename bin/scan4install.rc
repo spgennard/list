@@ -1,9 +1,19 @@
 if [ "x$REMOTE_CONTAINERS" == "x" ];
 then
-	[[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path bash)"
+	if [[ "$TERM_PROGRAM" == "vscode" ]]; then
+		loc="$(code --locate-shell-integration-path bash 2>/dev/null)"
+		if [ ! "x$loc" == "x" ]; then
+			if [ -f $loc ]; then
+				. $loc
+			fi	
+		fi	
+	fi
 fi
 
-. ~/.bashrc
+if [ -f ~/.bashrc ]; then
+	. ~/.bashrc
+fi
+
 . ~/dotfiles/bin/scan4install.sh
 
 export PATH
