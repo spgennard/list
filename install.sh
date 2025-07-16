@@ -21,6 +21,8 @@ then
     	echo "# $__DOTFILE_KEY" 
 	echo "PATH=${__DOTFILE_DIR}/bin:\$PATH" >>~/.bashrc
 	echo "export PATH" >>~/.bashrc
+
+	echo "alias choose=\". ${__DOTFILE_DIR}/bin/scan4install.rc\""
 	echo
 #	FZF_FILE=$(dpkg -L fzf | grep bindings.bash)
 #	echo "# Set up fzf key bindings and fuzzy completion"
