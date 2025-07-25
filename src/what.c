@@ -29,7 +29,9 @@
  * SUCH DAMAGE.
  */
 
-#include <err.h>
+//#define _POSIX_C_SOURCE 2
+//#define __ssize_t_defined
+//#include <err.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -74,7 +76,7 @@ main(int argc, char *argv[])
 			in = fopen(file, "r");
 			if (in == NULL) {
 				if (!qflag)
-					warn("%s", file);
+					perror(file);
 				continue;
 			}
 			if (!qflag)
