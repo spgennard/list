@@ -1,0 +1,202 @@
+#!/bin/bash
+DOCKER=docker
+DOCKER_VENV_RC=.${DOCKER}_venv_rc
+
+function get_dirs_from_image_via_env
+{
+	_ENV_LOC=$2
+	$DOCKER run --rm --entrypoint /bin/bash $1 -c "cd \$$_ENV_LOC; find bin -type d | grep -vE '\.(so$|so\.[0-9\.]*$|sql$|py$|nupkg$|launch$|pl$|xml$|class$|mfscript$)'" 
+}
+
+function get_files_from_image_env
+{
+	_ENV_LOC=$2
+	$DOCKER run --rm --entrypoint /bin/bash $1 -c "cd \$$_ENV_LOC; find bin -type f -executable -print | grep -vE '\.(so$|so\.[0-9\.]*$|sql$|py$|nupkg$|launch$|pl$|xml$|class$|mfscript$)'" 
+	$DOCKER run --rm --entrypoint /bin/bash $1 -c "cd \$$_ENV_LOC; find bin -type l -print"
+}
+
+function create_proxy_script_via_env
+{
+	IMAGE=$1
+	FILE=$2
+	EXE=$(basename $2)
+	EXE_DIR=$3
+	cat << EOF >$2
+#!/bin/bash
+_SCRIPT_DIR="\$(cd "\$(dirname "\${BASH_SOURCE[0]}")" && pwd)"
+_IMAGE=$1
+_FILE=$2
+_EXE=$EXE
+
+PHOME=\$(dirname \$(pwd))
+$DOCKER run \\
+	--rm  \\
+	--volume="\$PHOME:\$PHOME" \\
+	--volume="
+	--workdir="\$(pwd)" \\
+	\$_IMAGE /bin/bash -c ". \\\$$3/bin/cobsetenv >/dev/null && \\\$$3/bin/\$_EXE \$*"
+EOF
+chmod +x $2
+}
+
+function create_proxy_activate_script_via_env
+{
+	IMAGE=$1
+	FILE=$2
+	CONTAINER_NAME=$3
+	LOCENV=$4
+	LOCENV=$(docker run --rm $IMAGE env | grep $LOCENV | cut -d= -f2-)
+
+	cat << EOF >$2
+#!/bin/bash
+_SCRIPT_DIR="\$(cd "\$(dirname "\${BASH_SOURCE[0]}")" && pwd)"
+_IMAGE=$1
+
+PHOME=\$(dirname \$(pwd))
+if [ x\$($DOCKER inspect -f '{{.State.Running}}' $CONTAINER_NAME 2>/dev/null) = "xtrue" ]; 
+then
+	echo Using $CONTAINER_NAME
+else
+	echo Starting $CONTAINER_NAME
+	$DOCKER run \\
+		--volume="\$PHOME:\$PHOME" \\
+		--volume=$LOCENV:\${_SCRIPT_DIR}/mnt \\
+		--workdir="\$(pwd)" \\
+		--name "$CONTAINER_NAME" \\
+		--detach \\
+		\$_IMAGE tail -f /dev/null
+fi
+
+_NEWP=\$PATH
+for sd in \$(find \$_SCRIPT_DIR -type d -print)
+do
+	_NEWP="\${sd}:\$_NEWP"
+done
+
+export PATH=\$_NEWP
+EOF
+
+chmod +x $2
+}
+
+function create_proxy_deactivate_script_via_env
+{
+	IMAGE=$1
+	FILE=$2
+	CONTAINER_NAME=$3
+	cat << EOF >$2
+#!/bin/bash
+_SCRIPT_DIR="\$(cd "\$(dirname "\${BASH_SOURCE[0]}")" && pwd)"
+_IMAGE=$1
+
+PHOME=\$(dirname \$(pwd))
+if [ "x\$($DOCKER inspect -f '{{.State.Running}}' $CONTAINER_NAME 2>/dev/null)" = "xtrue" ]; 
+then 
+	$DOCKER kill "$CONTAINER_NAME"
+	$DOCKER stop "$CONTAINER_NAME"
+	$DOCKER rm "$CONTAINER_NAME"
+fi
+
+EOF
+
+chmod +x $2
+}
+
+function create_proxy_exec_script_via_env
+{
+	IMAGE=$1
+	FILE=$2
+	EXE=$(basename $2)
+	EXE_DIR=$3
+	CONTAINER_NAME=$4
+	cat << EOF >$2
+#!/bin/bash
+_SCRIPT_DIR="\$(cd "\$(dirname "\${BASH_SOURCE[0]}")" && pwd)"
+_IMAGE=$1
+_FILE=$2
+_EXE=$EXE
+
+
+PHOME=\$(dirname \$(pwd))
+if [ ! "x$($DOCKER inspect -f '{{.State.Running}}' $CONTAINER_NAME 2>/dev/null)" = "xtrue" ]; 
+then
+	$DOCKER run \\
+		--volume="\$PHOME:\$PHOME" \\
+		--workdir="\$(pwd)" \\
+		--name "$CONTAINER_NAME" \\
+		--detach \\
+		\$_IMAGE tail -f /dev/null
+fi
+
+$DOCKER exec \\
+	--workdir="\$(pwd)" \\
+	"$CONTAINER_NAME" \\
+	/bin/bash -c ". \\\$$3/bin/cobsetenv >/dev/null && \\\$$3/bin/\$_EXE \$*"
+EOF
+chmod +x $2
+
+}
+
+if [ -d .$DOCKER-venv ];
+then
+	if [ -f .$DOCKER-venv/bin/activate ];
+	then
+		echo No action required
+		exit
+	fi
+else
+	mkdir .$DOCKER-venv
+fi
+
+if [ -f $DOCKER_VENV_RC ];
+then
+	. $DOCKER_VENV_RC
+	if [ "x$BASE_IMAGE" == "x" ];
+	then
+		echo $0: no BASE_IMAGE in $DOCKER_VENV_RC
+		exit
+	fi
+	if [ "x$IMAGE_STYLE" == "x" ];
+	then
+		echo $0: no IMAGE_STYLE in $DOCKER_VENV_RC
+		exit
+	fi
+	if [ "x$BASE_IMAGE_TOOLS_LOC_ENV" == "x" ];
+	then
+		echo $0: no BASE_IMAGE_TOOLS_LOC_ENV in $DOCKER_VENV_RC
+		exit
+	fi
+
+	if [ "x$DOCKER_VENV_RC" == "x" ];
+	then
+		echo $0: no DOCKER_VENV_RC in $DOCKER_VENV_RC
+		exit
+	fi	
+
+	cd .$DOCKER-venv
+	for d in $(get_dirs_from_image_via_env $BASE_IMAGE $BASE_IMAGE_TOOLS_LOC_ENV)
+	do
+		if [ ! -d $d ]
+		then
+			mkdir $d
+		fi
+	done
+
+	if [ ! x"$BASE_IMAGE_TOOLS_LOC_ENV" == "x" ];
+	then
+		create_proxy_activate_script_via_env $BASE_IMAGE activate $CONTAINER_NAME $BASE_IMAGE_TOOLS_LOC_ENV
+		create_proxy_deactivate_script_via_env  $BASE_IMAGE deactivate $CONTAINER_NAME $BASE_IMAGE_TOOLS_LOC_ENV
+		for f in $(get_files_from_image_env $BASE_IMAGE $BASE_IMAGE_TOOLS_LOC_ENV)
+		do
+			if [ "x$CONTAINER_NAME" == "x" ];
+			then
+				create_proxy_script_via_env $BASE_IMAGE $f $BASE_IMAGE_TOOLS_LOC_ENV
+			else
+				create_proxy_exec_script_via_env $BASE_IMAGE $f $BASE_IMAGE_TOOLS_LOC_ENV $CONTAINER_NAME
+			fi
+		done
+	fi
+	exit
+else
+	echo $0: missing $DOCKER_VENV_RC
+fi
