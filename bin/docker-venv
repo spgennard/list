@@ -136,6 +136,7 @@ then
 fi
 
 $DOCKER exec \\
+        -ti \\
 	--workdir="\$(pwd)" \\
 	"$CONTAINER_NAME" \\
 	/bin/bash -c ". \\\$$3/bin/cobsetenv >/dev/null && \\\$$3/bin/\$_EXE \$*"

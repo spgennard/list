@@ -1,0 +1,169 @@
+{
+  "$schema": "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json",
+  "palettes": {
+    "list": {
+      "rocket": {
+        "black": "#111111",
+        "blue": "#0000FF",
+        "git": "#FFFB38",
+        "git-ahead": "#B388FF",
+        "git-background": "#FFFB38",
+        "git-behind": "#B388FF",
+        "git-diverged": "#FF4500",
+        "git-foreground": "#98019b",
+        "git-modified": "#FF9248",
+        "green": "#00FF00",
+        "red": "#FF0000",
+        "rs-background-1": "#98019b",
+        "rs-background-2": "#98019b",
+        "rs-background-3": "#98019b",
+        "rs-background-4": "#98019b",
+        "svn-background": "#FFFB38",
+        "svn-foreground": "#98019b",
+        "white": "#FFFFFF"
+      },
+      "vscode-rocket": {
+        "black": "#111111",
+        "blue": "#0000FF",
+        "git": "#FFFFFF",
+        "git-ahead": "#B388FF",
+        "git-background": "#FFFFFF",
+        "git-behind": "#B388FF",
+        "git-diverged": "#FF4500",
+        "git-foreground": "#98019b",
+        "git-modified": "#FF9248",
+        "green": "#00FF00",
+        "red": "#FF0000",
+        "rs-background-1": "#98019b",
+        "rs-background-2": "#98019b",
+        "rs-background-3": "#98019b",
+        "rs-background-4": "#98019b",
+        "svn-background": "#FFFFFF",
+        "svn-foreground": "#98019b",
+        "white": "#FFFFFF"
+      }
+    },
+    "template": "{{ if eq .Env.TERM_PROGRAM \"vscode\" }}vscode-rocket{{ else }}rocket{{ end }}"
+  },
+  "console_title_template": "{{ if .Env.OMP_TITLE_PREFIX }} {{ env \"OMP_TITLE_PREFIX\" }} {{else}} {{.Folder}} {{ end}} @ {{ .HostName }}",
+  "blocks": [
+    {
+      "type": "prompt",
+      "alignment": "left",
+      "segments": [
+        {
+          "properties": {
+            "fetch_status": true,
+            "fetch_upstream_icon": true
+          },
+          "leading_diamond": "\ue0b6",
+          "trailing_diamond": "\ue0b4",
+          "template": "\uea68 \ue0b1 {{ .HEAD }}",
+          "foreground": "p:git-foreground",
+          "background": "p:git-background",
+          "type": "git",
+          "style": "powerline",
+          "background_templates": [
+            "{{ if or (.Working.Changed) (.Staging.Changed) }}p:git-modified{{ end }}",
+            "{{ if and (gt .Ahead 0) (gt .Behind 0) }}p:git-diverged{{ end }}",
+            "{{ if gt .Ahead 0 }}p:git-ahead{{ end }}",
+            "{{ if gt .Behind 0 }}p:git-behind{{ end }}"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "prompt",
+      "alignment": "left",
+      "segments": [
+        {
+          "properties": {
+            "fetch_status": false,
+            "native_fallback": true
+          },
+          "leading_diamond": "\ue0b6",
+          "trailing_diamond": "\ue0b4",
+          "template": "\ue0a0 \ue0b1 {{.Branch}} {{.Working.String}}",
+          "foreground": "p:svn-foreground",
+          "background": "p:svn-background",
+          "type": "svn",
+          "style": "plain"
+        }
+      ],
+      "newline": true
+    },
+    {
+      "type": "prompt",
+      "alignment": "right",
+      "segments": [
+        {
+          "template": "{{ if .Env.COBDIR }}{{if .Env.__COBOL_VERSION }}\uebfe {{ env \"__COBOL_VERSION\" }}{{else}}{{ env \"COBDIR\" }} {{ end }}{{ end }}",
+          "type": "text",
+          "style": "plain"
+        }
+      ]
+    },
+    {
+      "type": "prompt",
+      "alignment": "right",
+      "segments": [
+        {
+          "template": "{{ if .Env.ACUCOBOL }}ACUCOBOL \ue0b1 {{ env \"ACUCOBOL\" }} {{if .Env.__COBOL_VERSION }}\uebfe {{ env \"__COBOL_VERSION\" }}{{ end }}{{ end }}",
+          "type": "text",
+          "style": "plain"
+        }
+      ]
+    },
+    {
+      "type": "prompt",
+      "alignment": "left",
+      "segments": [
+        {
+          "properties": {
+            "style": "full"
+          },
+          "leading_diamond": "\ue0b6",
+          "trailing_diamond": "\ue0b4",
+          "template": "\uf115 \ue0b1 {{ .Path }}",
+          "foreground": "#ffffff",
+          "background": "p:rs-background-4",
+          "type": "path",
+          "style": "powerline",
+          "background_templates": [
+            "{{if contains \"default\" .Profile}}#FFA400{{end}}",
+            "{{if contains \"jan\" .Profile}}#f1184c{{end}}"
+          ],
+          "min_width": 80
+        }
+      ],
+      "newline": true
+    },
+    {
+      "type": "prompt",
+      "alignment": "left",
+      "segments": [
+        {
+          "template": " \uf0e7 ",
+          "foreground": "#100e23",
+          "powerline_symbol": "\ue0b0",
+          "background": "#ffe9aa",
+          "type": "root",
+          "style": "powerline"
+        },
+        {
+          "template": "{{ if .SSHSession }}\ueba9 {{ end }}{{ .UserName }}{{ if .SSHSession }}@.HostName{{ end }}",
+          "type": "session",
+          "style": "plain"
+        },
+        {
+          "template": " # ",
+          "foreground": "#007ACC",
+          "type": "text",
+          "style": "plain"
+        }
+      ],
+      "newline": true
+    }
+  ],
+  "version": 3
+}
