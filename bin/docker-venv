@@ -64,6 +64,7 @@ if [ x\$($DOCKER inspect -f '{{.State.Running}}' $CONTAINER_NAME 2>/dev/null) = 
 then
 	echo Using $CONTAINER_NAME
 else
+	$DOCKER rm $CONTAINER_NAME 2>/dev/null || true
 	echo Starting $CONTAINER_NAME
 	$DOCKER run \\
 		--volume="\$PHOME:\$PHOME" \\
