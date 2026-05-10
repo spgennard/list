@@ -1,0 +1,5 @@
+#!/bin/bash
+
+
+IFS=
+exec  $0_$(uname -s | tr '[A-Z]' '[a-z]')_$(uname -m) $@
